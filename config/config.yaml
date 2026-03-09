@@ -1,0 +1,50 @@
+data:
+  pair: "EURUSD"
+  timeframe: "M15"
+  csv_path: "data/raw/EURUSD_M15.csv"
+  context_window: 64        # candles per input sequence
+  train_ratio: 0.70
+  val_ratio: 0.15
+  # test_ratio implied: 1 - train - val = 0.15
+
+features:
+  ma_periods: [16, 32, 64]
+  atr_period: 14
+  vol_lookback: 20          # rolling window for volume ratio
+
+labeling:
+  method: "triple_barrier"
+  k: 1.20                   # ATR multiplier — tuned for this dataset (51% directional)
+  horizon: 3                # max candles before HOLD assigned
+
+model:
+  d_model: 128
+  num_heads: 8
+  num_layers: 4
+  d_ff: 512
+  dropout: 0.1
+  max_seq_len: 335
+  vocab_size: 27
+
+training:
+  batch_size: 64
+  learning_rate: 0.0001
+  weight_decay: 0.01
+  max_epochs: 100
+  early_stopping_patience: 10
+  warmup_steps: 500
+  grad_clip: 1.0
+
+trading:
+  entry_threshold: 0.60     # minimum probability to enter a trade
+  atr_stop_mult: 1.5        # stop-loss distance in ATR multiples
+  atr_target_mult: 2.0      # take-profit distance in ATR multiples
+  spread_pips: 1.0          # assumed broker spread per trade
+
+mt5:
+  symbol: "EURUSD"
+  timeframe: "M15"
+  candles_to_fetch: 64      # always start_pos=1 (skip forming bar)
+
+tokenizer:
+  wick_min_atr_fraction: 0.10   # wick must be > 10% of ATR to be significant
