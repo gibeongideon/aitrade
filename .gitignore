@@ -291,3 +291,5 @@ GEMINI.md
 # AITrade — ignore raw CSV source files (too large for git)
 data/raw/*.csv
 data/raw/other time frame/
+data/processed/
+data/raw/

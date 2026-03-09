@@ -27,21 +27,25 @@ https://forexsb.com/historical-forex-data
 | Date range | 2021-09-24 → 2025-09-26 (~4 years) |
 | Label k value | 1.20 (tuned — was 0.75 default) |
 | Label horizon | 3 candles (45 min) |
-| BUY  | 25,718 (25.7%) |
-| HOLD | 48,838 (48.9%) |
-| SELL | 25,378 (25.4%) |
-| BUY + SELL combined | 51.1% ✅ (target: 40–60%) |
+| BUY  | 7,996 (27.2%) — non-overlapping events |
+| HOLD | 13,560 (46.2%) — non-overlapping events |
+| SELL | 7,826 (26.6%) — non-overlapping events |
+| Total events | 29,382 from 99,937 candles (29.4% density) |
+| BUY + SELL combined | 53.8% ✅ (target: 40–60%) |
 
 ### Phase 1 Notes
 
 - CSV format detected as **Format B** (single datetime column, no header)
 - k was adjusted from the documented default of 0.75 to **1.20** because this dataset
   has higher ATR candles — at k=0.75 the barriers were too close (80% directional).
-  k=1.20 produces a balanced 51% directional distribution.
+  k=1.20 produces a balanced 54% directional distribution.
 - No zero-volume rows were present in the source CSV (weekend rows already stripped
   by the data provider)
 - Largest gap in data: 3 days (2023-12-29 → 2024-01-01, Christmas/New Year)
 - `config/config.yaml` updated with the correct k=1.20
+- **Labeling uses NON-OVERLAPPING events** (López de Prado method): after labeling
+  candle T_i with exit at T_j, the next event starts at T_{j+1}. No future candle
+  is shared between two training samples. Event density ~29% of all candles.
 
 ### Phase 1 Pending
 
@@ -63,12 +67,14 @@ https://forexsb.com/historical-forex-data
 
 | Metric | Value |
 |--------|-------|
-| Input rows | 99,934 |
-| Train split | 69,953 rows → 69,890 sequences |
-| Val split | 14,990 rows → 14,927 sequences |
-| Test split | 14,991 rows → 14,928 sequences |
+| Input rows | 99,937 |
+| Total non-overlapping events | 29,382 |
+| Train sequences | 20,608 (events where exit stays in train split) |
+| Val sequences | 4,401 (purged at boundary) |
+| Test sequences | 4,354 (purged at boundary) |
 | Sequence length | 335 tokens ([CLS] + 64×5 content + 14 [PAD]) |
 | Vocab size used | 25 (IDs 0–24) |
+| Leakage prevention | Non-overlapping events + boundary purging ✅ |
 
 ### Phase 2 Token Frequencies (full dataset)
 
@@ -91,13 +97,13 @@ All 23 content tokens above 1% threshold. ✅
 | VOL | 0.5831, 1.3944, 1.9541 |
 | WICK min | 0.10 × ATR_14 (rule-based, no threshold) |
 
-### Phase 2 Label Distribution per Split
+### Phase 2 Label Distribution per Split (non-overlapping events only)
 
-| Split | SELL | HOLD | BUY |
-|-------|------|------|-----|
-| Train | 25.2% | 49.0% | 25.8% |
-| Val   | 24.8% | 49.1% | 26.1% |
-| Test  | 26.4% | 48.3% | 25.3% |
+| Split | Sequences | SELL | HOLD | BUY |
+|-------|-----------|------|------|-----|
+| Train | 20,608 | 26.6% | 46.0% | 27.4% |
+| Val   | 4,401  | 26.5% | 46.6% | 26.9% |
+| Test  | 4,354  | 26.9% | 46.4% | 26.7% |
 
 ---
 
@@ -158,8 +164,8 @@ aitrade/
 │   │   ├── csv_loader.py        ✅ Phase 1.1
 │   │   ├── features.py          ✅ Phase 1.2
 │   │   ├── labeler.py           ✅ Phase 1.3
-│   │   ├── tokenizer.py         ⏳ Phase 2.1
-│   │   └── sequences.py         ⏳ Phase 2.2
+│   │   ├── tokenizer.py         ✅ Phase 2.1
+│   │   └── sequences.py         ✅ Phase 2.2
 │   ├── model/
 │   │   ├── transformer.py       ⏳ Phase 3.1
 │   │   ├── trainer.py           ⏳ Phase 3.2
