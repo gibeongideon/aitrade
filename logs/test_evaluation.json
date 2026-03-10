@@ -1,0 +1,47 @@
+{
+  "n_test": 4354,
+  "temperature": 1.138429,
+  "accuracy": 0.5161,
+  "macro_f1": 0.398,
+  "ece": 0.0358,
+  "hc_accuracy": 0.7271,
+  "hc_coverage": 0.1406,
+  "hc_threshold": 0.6,
+  "per_class": {
+    "SELL": {
+      "precision": 0.3864,
+      "recall": 0.0145,
+      "f1": 0.028,
+      "support": 1172
+    },
+    "HOLD": {
+      "precision": 0.6587,
+      "recall": 0.7105,
+      "f1": 0.6836,
+      "support": 2021
+    },
+    "BUY": {
+      "precision": 0.3728,
+      "recall": 0.6839,
+      "f1": 0.4825,
+      "support": 1161
+    }
+  },
+  "confusion_matrix": [
+    [
+      17,
+      399,
+      756
+    ],
+    [
+      5,
+      1436,
+      580
+    ],
+    [
+      22,
+      345,
+      794
+    ]
+  ]
+}

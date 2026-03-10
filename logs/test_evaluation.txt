@@ -1,0 +1,44 @@
+============================================================
+  AITrade — Test Set Evaluation Report
+============================================================
+  Test sequences   : 4,354
+  Temperature (T)  : 1.1384
+
+── Overall Accuracy ─────────────────────────────────────
+  51.6%  (random baseline: 33.3%,  HOLD-always: ~46.6%)
+
+── Per-Class Metrics ────────────────────────────────────
+  Class   Precision   Recall      F1   Support
+  ----------------------------------------------
+  SELL        38.6%     1.5%  0.0280     1,172
+  HOLD        65.9%    71.0%  0.6836     2,021
+  BUY         37.3%    68.4%  0.4825     1,161
+  Macro                       0.3980
+
+── Confusion Matrix (rows=Actual, cols=Predicted) ───────
+              SELL     HOLD      BUY
+  SELL         17      399      756
+  HOLD          5    1,436      580
+  BUY          22      345      794
+
+── Probability Calibration ──────────────────────────────
+  ECE  : 0.0358  ← GOOD (< 0.10)
+
+── High-Confidence Predictions (threshold ≥ 60%) ─────
+  Coverage : 14.1% of test samples pass the threshold
+  Accuracy : 72.7%  (on high-confidence samples only)
+
+  Class    Acc (HC)    N (HC)
+  ----------------------------
+  SELL         0.0%       105
+  HOLD       100.0%       445
+  BUY          0.0%        62
+
+── Interpretation ───────────────────────────────────────
+  Accuracy above HOLD-always baseline — marginal signal present
+  Macro F1 < 0.40 — model struggles to distinguish all 3 classes
+  High-conf accuracy 72.7% at 14.1% coverage — usable trading signal ✓
+
+============================================================
+  NEXT: Run backtester.py to simulate trading performance
+============================================================

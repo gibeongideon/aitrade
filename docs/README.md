@@ -14,6 +14,7 @@
 | [08_future_improvements.md](08_future_improvements.md) | Phased improvement roadmap |
 | [09_glossary.md](09_glossary.md) | Token definitions, system terms, financial and ML terminology |
 | [10_implementation_guide.md](10_implementation_guide.md) | **Start here to build.** Project structure, MT5 setup, phase-by-phase plan |
+| [11_data_pipeline_explained.md](11_data_pipeline_explained.md) | **Data pipeline deep-dive.** Exact steps, actual numbers, what train/val/test look like |
 
 ---
 

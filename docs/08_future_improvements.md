@@ -355,3 +355,159 @@ High uncertainty → reduce position size or skip trade entirely.
 | Hybrid architecture | Medium | Medium | 3 |
 | Uncertainty quantification | High | Medium | 3 |
 | Foundation model | Very High | Extreme | 5+ |
+| Chronos/TimesFM fine-tuning | High | Low | 2 |
+| Expand data (pairs + history) | Very High | Low | 2 |
+| Asymmetric / trend-filtered labels | High | Medium | 2 |
+| Meta-labeling | High | High | 3 |
+| Model ensemble (5 seeds) | Medium | Low | 2 |
+
+---
+
+## Practical Improvements — Lessons from Phase 3/4 Build
+
+These are grounded in observed results from training and backtesting the first
+working model. Added as a reference for the next training iteration.
+
+---
+
+### 13. Expand Data Before Increasing Model Size
+
+The first model (4 years, 100K candles, 1 pair) achieved 51.6% test accuracy —
+marginally above the HOLD-always baseline. Before increasing model complexity,
+expanding the data is the higher-leverage action.
+
+| Data Expansion | Expected Impact |
+| -------------- | --------------- |
+| Add GBPUSD, USDJPY, AUDUSD | 3–4x more samples, cross-market generalisation |
+| Extend to 10+ years | Covers 2008 crisis, 2020 COVID, 2022 inflation — multiple regimes |
+| Add H1 candles as context | Trend direction filter significantly reduces counter-trend errors |
+
+**Rule:** Double the data before doubling the model parameters.
+
+---
+
+### 14. Multi-Timeframe Input Architecture (Priority 2)
+
+Feeding only M15 data means the model cannot distinguish a BUY signal in a
+strong downtrend from a BUY signal in a strong uptrend. H1 trend context is
+the single most impactful architecture change.
+
+```text
+H1 sequence  (last 16 candles = 16 hours):
+[CLS_H1] + 16 candles x 5 tokens = 81 tokens
+
+M15 sequence (last 64 candles = 16 hours):
+[CLS_M15] + 64 candles x 5 tokens = 321 tokens
+
+Fusion: concatenate [CLS_H1, CLS_M15] embeddings → classification head
+```
+
+Existing tokenizer, labeler, and sequences pipeline requires no changes —
+only the model input layer and a new H1 data loader need modification.
+
+---
+
+### 15. Trend-Filtered Labels
+
+The current labeler fires events in all market conditions. A large fraction of
+HOLD labels are counter-trend trades that always lose. Filtering by H1 trend
+before labeling would improve the signal quality without changing the model.
+
+```text
+Only label a BUY event at M15 candle i if:
+    MA_16[H1] > MA_64[H1] at time i   (H1 trend is bullish)
+
+Only label a SELL event at M15 candle i if:
+    MA_16[H1] < MA_64[H1] at time i   (H1 trend is bearish)
+
+Otherwise → label = -1 (skip as non-event, used for context only)
+```
+
+This reduces total events but significantly improves their directional reliability.
+
+---
+
+### 16. Model Ensemble — 5 Seeds (Easy Win)
+
+The cheapest accuracy improvement per hour of effort. Train 5 models with
+different random seeds on the same data, average their probability outputs.
+
+```python
+probs = mean([model_1(x), model_2(x), model_3(x), model_4(x), model_5(x)])
+```
+
+Typical gain: +2–4% accuracy, meaningfully fewer catastrophic errors, and
+more reliable high-confidence predictions. All 5 models share the same
+calibration temperature T (refit on ensemble output).
+
+Cost: 5× Colab training time (~5 hours on T4 for 60 epochs × 5 runs).
+
+---
+
+### 17. Chronos / TimesFM — Alternative to Custom Tokenization
+
+If the custom transformer approach plateaus after proper training, these
+foundation models offer a pretrained alternative that skips tokenization.
+
+| Model | Source | Approach |
+| ----- | ------ | -------- |
+| **Chronos** | Amazon (2024, open source) | Trained on 100K+ real time series, probabilistic forecasting |
+| **TimesFM** | Google (2024) | Similar, patch-based numerical forecasting |
+
+**How to adapt to classification:**
+
+```text
+1. Feed last 64 close prices (normalised) to Chronos
+2. Get forecast distribution for next 3 steps
+3. Compare forecast return to +/- ATR barrier thresholds
+4. Map: forecast > upper barrier → BUY, forecast < lower → SELL, else → HOLD
+```
+
+**Limitation:** These models forecast numerical values — they do not natively
+consume volume, wick structure, or MA trend tokens. They work on close prices
+only unless you engineer additional channels.
+
+**Recommendation:** Try Chronos only if the custom model fails to reach positive
+backtest expectancy after full training with expanded data.
+
+---
+
+### 18. Walk-Forward Validation Before Live Trading (Non-Negotiable)
+
+A single test-set backtest confirms performance on one 7-month period
+(Jul 2025 – Mar 2026). This is insufficient to confirm a genuine edge.
+
+Walk-forward across 6+ windows is required before risking capital:
+
+```text
+Window 1: train 2021-2022    | test Q1 2023
+Window 2: train 2021-Q1 2023 | test Q2 2023
+Window 3: train 2021-Q2 2023 | test Q3 2023
+Window 4: train 2021-Q3 2023 | test Q4 2023
+Window 5: train 2021-Q4 2023 | test Q1 2024
+Window 6: train 2021-Q1 2024 | test Q2 2024
+```
+
+If positive expectancy appears in 5+ of 6 windows, the edge is likely real.
+If it appears in 2 of 6, it is noise.
+
+---
+
+### 19. SELL Class Fix — Class Weight Tuning
+
+The first trained model showed near-zero SELL recall (1.5%) with 68.4% BUY recall.
+This means the model collapsed to predicting HOLD and BUY only. Root cause: the
+CrossEntropyLoss class weights were insufficient to overcome the BUY bias in the
+gradient signal.
+
+**Fix options (in order of effort):**
+
+| Option | How | Expected outcome |
+| ------ | --- | ---------------- |
+| Increase SELL weight | Set `class_weights[0] = 2.0` in trainer.py | Forces model to attend to SELL examples |
+| Oversample SELL events | Duplicate SELL sequences in train_sequences.pt | Balances gradient signal without weight tuning |
+| Focal loss | Replace CrossEntropyLoss with focal loss (gamma=2) | Down-weights easy HOLD examples, forces learning of hard SELL/BUY |
+| Binary approach | Train two separate models: SELL-vs-not, BUY-vs-not | Sidesteps 3-class imbalance entirely |
+
+The simplest fix: in `trainer.py`, manually override the computed class weights
+before training to give SELL equal or higher weight than BUY.

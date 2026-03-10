@@ -1,0 +1,55 @@
+==============================================================
+  AITrade — Backtest Report
+==============================================================
+  Entry threshold : 40%
+  Stop mult       : 1.5 x ATR
+  Target mult     : 2.0 x ATR
+  Spread          : 1.0 pip
+  Hold period     : 3 candles
+
+── Signal Summary ───────────────────────────────────────
+  Total signals checked  : 4,354
+  Signals above threshold: 1,622  (37.3% coverage)
+  BUY trades  : 1,580
+  SELL trades : 42
+
+── Trade Outcomes ───────────────────────────────────────
+  WIN      : 229  (14.1%)
+  LOSS     : 614  (37.9%)
+  TIME EXIT: 779  (48.0%)
+
+── PnL Metrics (in pips) ────────────────────────────────
+  Total PnL      : -1641.2 pips
+  Avg per trade  : -1.01 pips  (expectancy)
+  Avg WIN        : +10.7 pips
+  Avg LOSS       : -7.8 pips
+  Profit factor  : 0.72  (target > 1.20)
+  Per-trade Sharpe: -0.137
+  Max drawdown   : -1652.4 pips
+  Avg hold (candles): 2.5
+
+── BUY trades (1580) ──────────────────────────────────
+  Win rate   : 14.2%
+  Total PnL  : -1568.4 pips
+  Avg trade  : -0.99 pips
+  Profit fac : 0.72
+
+── SELL trades (42) ──────────────────────────────────
+  Win rate   : 9.5%
+  Total PnL  : -72.9 pips
+  Avg trade  : -1.73 pips
+  Profit fac : 0.44
+
+── Confidence vs Win-Rate Calibration ───────────────────
+    Conf range      N   Avg conf   Win rate
+  ------------------------------------------
+
+── Interpretation ───────────────────────────────────────
+  Win rate 14.1% < 50% — negative edge, do not trade live
+  Profit factor 0.72 — strategy is losing, do not trade live
+  Expectancy -1.01 pips/trade — negative expected value
+
+==============================================================
+  NEXT: If metrics pass — move to Phase 5 (live MT5 inference)
+        If metrics fail — revisit labeling k value or threshold
+==============================================================

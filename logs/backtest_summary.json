@@ -1,0 +1,15 @@
+{
+  "threshold": 0.4,
+  "total_signals": 4354,
+  "total_trades": 1622,
+  "coverage": 0.3725,
+  "win_rate": 0.1412,
+  "total_pnl_pips": -1641.24,
+  "expectancy": -1.0119,
+  "profit_factor": 0.7173,
+  "per_trade_sharpe": -0.1372,
+  "max_drawdown_pips": 1652.38,
+  "buy_trades": 1580,
+  "sell_trades": 42,
+  "time_exits": 779
+}

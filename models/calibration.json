@@ -1,0 +1,8 @@
+{
+  "temperature": 1.138429,
+  "val_nll_before": 0.998472,
+  "val_nll_after": 0.996892,
+  "val_ece_before": 0.025285,
+  "val_ece_after": 0.030981,
+  "val_accuracy": 0.511475
+}
